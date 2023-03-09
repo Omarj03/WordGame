@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Rotte_u6sbm17/OneDrive - mycit.ie/Year 2/Semester 2/C Programming/Assignment 1V2
+# Install script for directory: C:/Users/Rotte_u6sbm17/OneDrive/Year 2/Semester 2/C Programming/Assignment 1V2
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/Rotte_u6sbm17/OneDrive - mycit.ie/Year 2/Semester 2/C Programming/Assignment 1V2/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/Rotte_u6sbm17/OneDrive/Year 2/Semester 2/C Programming/Assignment 1V2/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
