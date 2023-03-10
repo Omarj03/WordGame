@@ -263,8 +263,8 @@ void game_mode(char difficulty){
     char partially_correct_letters[6] = {0};    // String of correctly guessed letters,
                                                 // that may not be in the correct position
 
-    int lives;
-    int guesses;
+    int lives = 6;
+    int guesses = 0;
     int partially_correct_letter_count = 0;
     int correctly_placed_letter_count = 0;
     int alphabet_use_chars[26] = {0};   // each index of the array counts how many of the corresponding char
@@ -277,97 +277,85 @@ void game_mode(char difficulty){
     int incorrect_letters_count = 0;
 
 
-    // Game Loop
-    int run_game = TRUE;// Run game, then ask user to repeat on game end
-    while(run_game) {
+    game_no++; // Increment the game no.
+    // Initialise variables
+    get_ran_word( ran_word);
+    for(int i = 0; i < 6; i++){
+        correctly_placed_letters[i] = '_';
+        partially_correct_letters[i] = 0;
+    }
+    for(int i = 0; i < 26; i++){
+        incorrect_letters[i] = 0;
+        alphabet_use_chars[i] = 0;
+    }
 
-        game_no++; // Increment the game no.
-        // Initialise variables
-        lives = 6;
-        guesses = 0;
-        get_ran_word( ran_word);
-        for(int i = 0; i < 6; i++){
-            correctly_placed_letters[i] = '_';
-            partially_correct_letters[i] = 0;
+
+
+    // Loop for life tracking
+    while(lives > 0){
+        word_input(user_word,difficulty,correctly_placed_letters,partially_correct_letters,
+                   partially_correct_letter_count,incorrect_letters,incorrect_letters_count,alphabet_use_chars);
+
+        guesses++; // Increment number of guesses after guess is made
+
+        compare_words(ran_word,user_word,correctly_placed_letters,partially_correct_letters,
+                      &partially_correct_letter_count,&correctly_placed_letter_count,difficulty,
+                      incorrect_letters,&incorrect_letters_count);
+
+        printf("\n%s","Random word: ");
+        print_word(ran_word);
+
+        // If the whole word is correct, break
+        if (correctly_placed_letter_count == 5){
+            win++;
+            printf("\n%s", "Correct, you win!");
+            win_guess_archive[game_no] = guesses;
+
+            // Calculate characters of alphabet used and record accordingly
+            int char_use_count = 0;
+            for(int i = 0; i < 26; i++){
+                if(alphabet_use_chars[i] >= 1){
+                    char_use_count++;
+                }
+            }
+            win_alphabet_use_archive[game_no] = char_use_count;
+            break;
         }
-        for(int i = 0; i < 26; i++){
-            incorrect_letters[i] = 0;
-            alphabet_use_chars[i] = 0;
-        }
 
-        correctly_placed_letters[5] = 0;
-        partially_correct_letter_count = 0;
-        correctly_placed_letter_count = 0;
-        incorrect_letters_count = 0;
-
-        // Loop for life tracking
-        while(lives > 0){
-            word_input(user_word,difficulty,correctly_placed_letters,partially_correct_letters,
-                       partially_correct_letter_count,incorrect_letters,incorrect_letters_count,alphabet_use_chars);
-
-            guesses++; // Increment number of guesses after guess is made
-
-            compare_words(ran_word,user_word,correctly_placed_letters,partially_correct_letters,
-                          &partially_correct_letter_count,&correctly_placed_letter_count,difficulty,
-                          incorrect_letters,&incorrect_letters_count);
-
-            printf("\n%s","Random word: ");
+        // Else if lives == 1, trigger game over. Doing so while lives == 1 as lives is decremented after the win check.
+        else if(lives == 1){
+            lose++;
+            printf("\n%s", "Game Over! The word was....");
             print_word(ran_word);
+            win_guess_archive[game_no] = guesses;
 
-            // If the whole word is correct, break
-            if (correctly_placed_letter_count == 5){
-                win++;
-                printf("\n%s", "Correct, you win!");
-                win_guess_archive[game_no] = guesses;
-
-                // Calculate characters of alphabet used and record accordingly
-                int char_use_count = 0;
-                for(int i = 0; i < 26; i++){
-                    if(alphabet_use_chars[i] >= 1){
-                        char_use_count++;
-                    }
+            // Calculate characters of alphabet used and record accordingly
+            int char_use_count = 0;
+            for(int i = 0; i < 26; i++){
+                if(alphabet_use_chars[i] >= 1){
+                    char_use_count++;
                 }
-                win_alphabet_use_archive[game_no] = char_use_count;
-                break;
             }
-
-            // Else if lives == 1, trigger game over. Doing so while lives == 1 as lives is decremented after the win check.
-            else if(lives == 1){
-                lose++;
-                printf("\n%s", "Game Over! The word was....");
-                print_word(ran_word);
-                win_guess_archive[game_no] = guesses;
-
-                // Calculate characters of alphabet used and record accordingly
-                int char_use_count = 0;
-                for(int i = 0; i < 26; i++){
-                    if(alphabet_use_chars[i] >= 1){
-                        char_use_count++;
-                    }
-                }
-                win_alphabet_use_archive[game_no] = char_use_count;
-                break;
-            }
-
-            else{
-                lives --;
-                printf("\n%s", "Correctly guessed: ");
-                print_word(correctly_placed_letters);
-                printf("\n%s", "Correct letters: ");
-                print_word(partially_correct_letters);
-                if(difficulty == 'h'){ // If hard mode print incorrect letters
-                    printf("\nIncorrect Letters: ");
-                    for(int i = 0; i < 26;i++){
-                        printf("%c",incorrect_letters[i])   ;
-                    }
-                }
-
-
-                printf("\nYou have %d attempts remaining...",lives);
-            }
+            win_alphabet_use_archive[game_no] = char_use_count;
+            break;
         }
 
-        break;
+        else{
+            lives --;
+            printf("\n%s", "Correctly guessed: ");
+            print_word(correctly_placed_letters);
+            printf("\n%s", "Correct letters: ");
+            print_word(partially_correct_letters);
+            if(difficulty == 'h'){ // If hard mode print incorrect letters
+                printf("\nIncorrect Letters: ");
+                for(int i = 0; i < 26;i++){
+                    printf("%c",incorrect_letters[i])   ;
+                }
+            }
+
+
+            printf("\nYou have %d attempts remaining...",lives);
+        }
     }
 
 
