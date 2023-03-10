@@ -15,11 +15,18 @@ int win = 0;
 int lose = 0;
 
 char alphabet[26] = {0};
+int win_guess_archive[100] = {}; // counts how many guesses it took for each win
+int win_alphabet_use_archive[100] = {}; // counts how many letters of the alphabet were used
+
+int game_no = -1;   // Tracks which game the user is currently on. -1 as it will be incremented to 0 at the start of
+                    // the game. Used to index win_guess_archive
 
 
 /*
  * Functions
  */
+
+
 
 // Print Word
 void print_word(char word[6]){
@@ -74,11 +81,12 @@ int check_in_dictionary(char word[6]){
 
 // Word Input
 void word_input(char user_word[6], char difficulty,char correctly_placed_letters[5]
-                ,char partially_correct_letters[5],int partially_correct_letters_count){
+                ,char partially_correct_letters[5],int partially_correct_letters_count,
+                char incorrect_letters[26], int incorrect_letters_count, int alphabet_use_chars[]){
     char tempString[6]; //  Input assigned here to validate before assigning to pointer
     int length = 0;
     while(TRUE){
-        fflush(stdin);
+        fflush(stdin); // Clear the input buffer
         char input = 0;
         printf("%s","\nEnter a string of letters --> ");
 
@@ -96,6 +104,7 @@ void word_input(char user_word[6], char difficulty,char correctly_placed_letters
         int valid = 1;
         valid = check_in_dictionary(tempString); // Check if in dictionary
 
+
         // For hard mode
         int correct_and_checked_count = 0;  // This will keep track of which correct characters have been checked,
         char correct_and_checked[6] = {0};  // So the program doesn't consider words with repeated chars (i.e. spots)
@@ -111,6 +120,8 @@ void word_input(char user_word[6], char difficulty,char correctly_placed_letters
                 valid = 0;
                 break;
             }
+
+
 
             // Check if the difficulty mode is hard, do the required checks
             if(difficulty == 'h'){
@@ -143,6 +154,16 @@ void word_input(char user_word[6], char difficulty,char correctly_placed_letters
                     }
                 }
 
+                // Check if the characters in incorrect_letters[] are present,
+                // If so, valid = 0 and break
+                if( incorrect_letters > 0){
+                    for(int i = 0; i < incorrect_letters_count;i++){
+                        if(check_in_string(incorrect_letters[i],tempString) ){
+                            valid = 0;
+                            break;
+                        }
+                    }
+                }
 
             }
         }
@@ -153,7 +174,17 @@ void word_input(char user_word[6], char difficulty,char correctly_placed_letters
             // Copy tempString[] to user_word[]
             for (int i = 0; i < 6; i++) {
                 user_word[i] = tempString[i];
+
+                // Check if in alphabet
+                for(int j = 0; j < 26;j++){
+                    if(tempString[i] == alphabet[j]){
+                        alphabet_use_chars[j] += 1;
+                    }
+                }
+
             }
+
+
             break;
         }
 
@@ -229,11 +260,17 @@ void game_mode(char difficulty){
     char ran_word[6] = {0};
     char user_word[6] = {0}; //  String for user inputted word
     char correctly_placed_letters[6] = {0}; // String of correctly guessed letters, in the correct position
-    char partially_correct_letters[6] = {0}; // String of correctly guessed letters, that may not be in the correct position
+    char partially_correct_letters[6] = {0};    // String of correctly guessed letters,
+                                                // that may not be in the correct position
 
-    int lives = 0;
+    int lives;
+    int guesses;
     int partially_correct_letter_count = 0;
     int correctly_placed_letter_count = 0;
+    int alphabet_use_chars[26] = {0};   // each index of the array counts how many of the corresponding char
+                                            // in alphabet were used in each game. This is done so we
+                                            // don't simply iterate each time a character is used,
+                                            //  and get an incorrect percentage in stats
 
     // Hard Mode specific
     char incorrect_letters[26] = {0}; // String that collects incorrect letters inputted
@@ -244,15 +281,18 @@ void game_mode(char difficulty){
     int run_game = TRUE;// Run game, then ask user to repeat on game end
     while(run_game) {
 
+        game_no++; // Increment the game no.
         // Initialise variables
         lives = 6;
+        guesses = 0;
         get_ran_word( ran_word);
         for(int i = 0; i < 6; i++){
             correctly_placed_letters[i] = '_';
             partially_correct_letters[i] = 0;
         }
-        for(int i = 0; i <= 26; i ++){
+        for(int i = 0; i < 26; i++){
             incorrect_letters[i] = 0;
+            alphabet_use_chars[i] = 0;
         }
 
         correctly_placed_letters[5] = 0;
@@ -262,7 +302,11 @@ void game_mode(char difficulty){
 
         // Loop for life tracking
         while(lives > 0){
-            word_input(user_word,difficulty,correctly_placed_letters,partially_correct_letters,partially_correct_letter_count);
+            word_input(user_word,difficulty,correctly_placed_letters,partially_correct_letters,
+                       partially_correct_letter_count,incorrect_letters,incorrect_letters_count,alphabet_use_chars);
+
+            guesses++; // Increment number of guesses after guess is made
+
             compare_words(ran_word,user_word,correctly_placed_letters,partially_correct_letters,
                           &partially_correct_letter_count,&correctly_placed_letter_count,difficulty,
                           incorrect_letters,&incorrect_letters_count);
@@ -274,6 +318,16 @@ void game_mode(char difficulty){
             if (correctly_placed_letter_count == 5){
                 win++;
                 printf("\n%s", "Correct, you win!");
+                win_guess_archive[game_no] = guesses;
+
+                // Calculate characters of alphabet used and record accordingly
+                int char_use_count = 0;
+                for(int i = 0; i < 26; i++){
+                    if(alphabet_use_chars[i] >= 1){
+                        char_use_count++;
+                    }
+                }
+                win_alphabet_use_archive[game_no] = char_use_count;
                 break;
             }
 
@@ -282,6 +336,16 @@ void game_mode(char difficulty){
                 lose++;
                 printf("\n%s", "Game Over! The word was....");
                 print_word(ran_word);
+                win_guess_archive[game_no] = guesses;
+
+                // Calculate characters of alphabet used and record accordingly
+                int char_use_count = 0;
+                for(int i = 0; i < 26; i++){
+                    if(alphabet_use_chars[i] >= 1){
+                        char_use_count++;
+                    }
+                }
+                win_alphabet_use_archive[game_no] = char_use_count;
                 break;
             }
 
@@ -297,6 +361,8 @@ void game_mode(char difficulty){
                         printf("%c",incorrect_letters[i])   ;
                     }
                 }
+
+
                 printf("\nYou have %d attempts remaining...",lives);
             }
         }
@@ -309,13 +375,24 @@ void game_mode(char difficulty){
 
 
 void stats_mode(){
-    int total = win+lose;
-    float win_rate = (float)win/ (float)total;
-    printf("%s","Stats:\n");
-    printf("Wins: %d",win);
-    printf("Loses: %d",lose);
-    printf("Total: %d",total);
-    printf("Win Rate: %f%%",win_rate);
+    float win_rate = ((float)win/ (float)(win+lose))*100;
+    printf("\nStats:\n");
+    printf("\nWins: %d",win);
+    printf("\nLoses: %d",lose);
+    printf("\nTotal: %d",game_no);
+    printf("\nWin Rate: %f%%",win_rate);
+
+    printf("\nGuesses per game: ");
+    for (int i = 0; i <= game_no; i++){
+        printf("\n\t%d: ",i+1);
+        for(int j = 0; j < win_guess_archive[i];j++)
+            printf("%c",'*');
+
+    }
+    printf("\n %% of alphabet used per game:");
+    for (int i = 0; i <= game_no; i++){
+        printf("\n\t%d: %f%%",i+1, (float) win_alphabet_use_archive[i] / 26.0);
+    }
 
 }
 
@@ -329,12 +406,11 @@ int main(){
 
     for(int i = 0; i < 26; i++){
         alphabet[i] = i+'a'; // Loop through ascii values to create alphabet array
-
     }
 
     char input = 0;
     while (TRUE){
-    printf("Word Game!\n-----------\n\t1. Normal Mode\n\t2. Hard More\n\t3. View Stats \n\t4. Quit\n -->");
+    printf("Word Game!\n-----------\n\t1. Normal Mode\n\t2. Hard Mode\n\t3. View Stats \n\t4. Quit\n -->");
     input = getchar(); getchar();
     switch (input) {
         case '1':
